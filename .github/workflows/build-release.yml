@@ -65,20 +65,23 @@ jobs:
   build-windows-release:
     runs-on: windows-latest
     steps:
-      # - name: Setup MSBuild
-      #   uses: microsoft/setup-msbuild@v2
-      # - name: Setup dependencies
-      #   run: |
-      #     # Install OpenSSL and Development Headers
-      #     $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
-      #     Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
-      #     Write-Output 'Downloaded OpenSSL installer.'
-      #     Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
-      #     Write-Output 'Installed OpenSSL.'
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Setup dependencies
+        run: |
+          # Install OpenSSL and Development Headers
+          $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
+          Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
+          Write-Output 'Downloaded OpenSSL installer.'
+          Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
+          Write-Output 'Installed OpenSSL.'
       - name: Checkout Erlang
         uses: actions/checkout@v4
         with:
           repository: erlang/otp
+      - name: Move Erlang Source
+        run: |
+          Move-Item -Path . -Destination .\otp
       - name: Configure Erlang Build
         shell: bash
         run: |
