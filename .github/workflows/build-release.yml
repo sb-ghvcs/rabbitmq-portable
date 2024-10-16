@@ -102,8 +102,6 @@ jobs:
           Write-Output 'Installed OpenSSL.'
       - name: Setup WSL
         uses: Vampire/setup-wsl@v3
-        with:
-          distribution: Ubuntu-24.04
       - name: Verify Dependencies
         shell: wsl-bash {0}
         run: |
