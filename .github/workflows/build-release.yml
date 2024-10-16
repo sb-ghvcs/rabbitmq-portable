@@ -74,17 +74,17 @@ jobs:
     steps:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Install Chocolatey
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force; `
-          [System.Net.ServicePointManager]::SecurityProtocol = `
-          [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-      - name: Install make, mingw, and msvc++
-        run: |
-          choco install make -y
-          choco install mingw -y --package-parameters "--arch x64"
-          choco install vcredist140 -y --force
+      # - name: Install Chocolatey
+      #   run: |
+      #     Set-ExecutionPolicy Bypass -Scope Process -Force; `
+      #     [System.Net.ServicePointManager]::SecurityProtocol = `
+      #     [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+      #     iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      # - name: Install make, mingw, and msvc++
+      #   run: |
+      #     choco install make -y
+      #     choco install mingw -y --package-parameters "--arch x64"
+      #     choco install vcredist140 -y --force
       # - name: Setup msvc++
       #   run: |
       #     $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
