@@ -81,7 +81,14 @@ jobs:
           repository: erlang/otp
       - name: Move Erlang Source
         run: |
-          Move-Item -Path . -Destination .\otp
+          # Create the new subfolder if it doesn't exist
+          $otp = "./otp"
+          if (-not (Test-Path -Path $newFolder)) {
+              New-Item -ItemType Directory -Path $newFolder
+          }
+
+          # Move all items from the current directory to the new subfolder
+          Get-ChildItem -Path . -Exclude otp | Move-Item -Destination $otp
       - name: Configure Erlang Build
         shell: bash
         run: |
