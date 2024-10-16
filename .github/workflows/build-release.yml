@@ -100,7 +100,12 @@ jobs:
           Write-Output 'Downloaded OpenSSL installer.'
           Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
           Write-Output 'Installed OpenSSL.'
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-24.04
       - name: Verify Dependencies
+        shell: wsl-bash {0}
         run: |
           make --version
           gcc --version
@@ -119,7 +124,7 @@ jobs:
           # Move all items from the current directory to the new subfolder
           Get-ChildItem -Path . -Exclude otp | Move-Item -Destination $otp
       - name: Configure Erlang Build
-        shell: bash
+        shell: wsl-bash {0}
         run: |
           cd otp
           export ERL_TOP=`pwd`
@@ -128,19 +133,19 @@ jobs:
           ./otp_build configure
       - name: If Configure Failed
         if: failure()
-        shell: bash
+        shell: wsl-bash {0}
         run: |
           cd otp
           cat config.log
       - name: Build Erlang
-        shell: bash
+        shell: wsl-bash {0}
         run: |
           cd otp
           export ERL_TOP=`pwd`
           ./otp_build boot -a
           ./otp_build release -a
       - name: Verify Erlang Build
-        shell: bash
+        shell: wsl-bash {0}
         run: |
           cd otp/release
           ls -lA
