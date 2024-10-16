@@ -92,20 +92,20 @@ jobs:
       #     Write-Output 'Downloaded MSVC++ redistributable.'
       #     Start-Process -FilePath "vcredist.exe" -ArgumentList '/quiet', '/norestart' -Wait
       #     Write-Output 'Installed MSVC++ redistributable.'
-      - name: Setup OpenSSL
-        run: |
-          # Install OpenSSL and Development Headers
-          $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
-          Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
-          Write-Output 'Downloaded OpenSSL installer.'
-          Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
-          Write-Output 'Installed OpenSSL.'
+      # - name: Setup OpenSSL
+      #   run: |
+      #     # Install OpenSSL and Development Headers
+      #     $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
+      #     Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
+      #     Write-Output 'Downloaded OpenSSL installer.'
+      #     Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
+      #     Write-Output 'Installed OpenSSL.'
       - name: Setup WSL
         uses: Vampire/setup-wsl@v3
       - name: Install build tools
         shell: wsl-bash {0}
         run: |
-          sudo apt update && sudo apt install g++-mingw-w64 gcc-mingw-w64 make
+          sudo apt update && sudo apt install -y g++-mingw-w64 gcc-mingw-w64 make openssl libssl-dev
       - name: Verify Dependencies
         shell: wsl-bash {0}
         run: |
