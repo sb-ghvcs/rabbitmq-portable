@@ -97,6 +97,7 @@ jobs:
       - name: Configure Erlang Build
         shell: wsl-bash {0}
         run: |
+          export PATH
           export ERL_TOP=/mnt/c/src/otp
           cd $ERL_TOP
           echo "ERL_TOP=$ERL_TOP"
@@ -113,6 +114,7 @@ jobs:
       - name: Build Erlang
         shell: wsl-bash {0}
         run: |
+          export PATH
           export ERL_TOP=/mnt/c/src/otp
           cd $ERL_TOP
           ./otp_build boot -a
