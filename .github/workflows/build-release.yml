@@ -84,7 +84,7 @@ jobs:
         run: |
           choco install make -y
           choco install mingw -y --package-parameters "--arch x64"
-          choco install vcredist140 -y
+          choco install vcredist140 -y --force
       # - name: Setup msvc++
       #   run: |
       #     $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
@@ -126,6 +126,12 @@ jobs:
           echo "ERL_TOP=$ERL_TOP"
           eval `./otp_build env_win32 x64`
           ./otp_build configure
+      - name: If Configure Failed
+        if: failure()
+        shell: bash
+        run: |
+          cd otp
+          cat config.log
       - name: Build Erlang
         shell: bash
         run: |
