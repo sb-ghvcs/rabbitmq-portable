@@ -44,10 +44,9 @@ jobs:
           mv !(otp) otp/ 
       - name: Configure Erlang Build
         run: |
-          mkdir erlang
           cd otp
           export ERL_TOP=`pwd`
-          ./configure --prefix=../erlang
+          ./configure
       - name: Build Erlang
         run: |
           cd otp
@@ -85,7 +84,7 @@ jobs:
           $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
           Invoke-WebRequest -Uri $redistUrl -OutFile 'vcredist.exe'
           Write-Output 'Downloaded MSVC++ redistributable.'
-          Start-Process -FilePath "vcredist.exe" -ArgumentList '/silent' -Wait
+          Start-Process -FilePath "vcredist.exe" -ArgumentList '/quiet', '/norestart' -Wait
           Write-Output 'Installed MSVC++ redistributable.'
       - name: Setup OpenSSL
         run: |

@@ -17,5 +17,5 @@ We build Erlang from source, since erlang doesn't provide a portable zip. We bui
 Then, we download rabbitmq's binaries (zip for windows, tar.xf for linux), unpack it, put it in a directory with erlang, and have a start script that takes care of setting any env variables needed for running it. We then package everything with PyInstaller into a single executable.
 
 ## Last run Inputs:
-MS VC++ Redistributable URL: https://aka.ms/vs/17/release/vc_redist.x64.exe
-OpenSSL Windows URL: https://slproweb.com/download/Win64OpenSSL-3_3_2.exe
+- MS VC++ Redistributable URL: https://aka.ms/vs/17/release/vc_redist.x64.exe
+- OpenSSL Windows URL: https://slproweb.com/download/Win64OpenSSL-3_3_2.exe
