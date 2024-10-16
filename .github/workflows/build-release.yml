@@ -3,6 +3,9 @@ name: Build Release
 on:
   workflow_dispatch:
     inputs:
+      msvcpp_redist_url:
+        description: "Url to Microsoft Visual C++ redistributable"
+        required: true
       windows_openssl_url:
         description: "Url to OpenSSL Installer for Windows"
         required: true
@@ -72,11 +75,18 @@ jobs:
     steps:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Setup Compilers
+      - name: Setup make and gcc
         uses: cygwin/cygwin-install-action@v4 
         with:
           platform: x86_64
           packages: make gcc-g++
+      - name: Setup msvc++
+        run: |
+          $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
+          Invoke-WebRequest -Uri $redistUrl -OutFile 'vcredist.exe'
+          Write-Output 'Downloaded MSVC++ redistributable.'
+          Start-Process -FilePath "vcredist.exe" -ArgumentList '/silent' -Wait
+          Write-Output 'Installed MSVC++ redistributable.'
       - name: Setup OpenSSL
         run: |
           # Install OpenSSL and Development Headers
