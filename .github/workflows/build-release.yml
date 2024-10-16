@@ -102,6 +102,10 @@ jobs:
           Write-Output 'Installed OpenSSL.'
       - name: Setup WSL
         uses: Vampire/setup-wsl@v3
+      - name: Install build tools
+        shell: wsl-bash {0}
+        run: |
+          sudo apt update && sudo apt install g++-mingw-w64 gcc-mingw-w64 make
       - name: Verify Dependencies
         shell: wsl-bash {0}
         run: |
