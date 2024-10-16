@@ -9,58 +9,62 @@ on:
 
 
 jobs:
-  # build-linux-release:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Setup dependencies
-  #       run: |
-  #         sudo apt update
-  #         sudo apt upgrade -y
-  #         # Github's runner environment already has tar, make, and gcc installed
-  #         # Install perl
-  #         sudo apt install -y perl
-  #         # Instal ncurses headers
-  #         sudo apt-get install -y ncurses-dev
-  #         # Install OpenSSL and Development Headers
-  #         sudo apt install -y openssl libssl-dev
-  #     - name: Verify Dependencies
-  #       run: |
-  #         tar --version
-  #         make --version
-  #         gcc --version
-  #         perl --version
-  #         openssl version
-  #     - name: Checkout Erlang
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: erlang/otp
-  #     - name: Configure Erlang Build
-  #       run: |
-  #         mkdir erlang
-  #         cd otp
-  #         export ERL_TOP=`pwd`
-  #         ./configure --prefix=../erlang
-  #     - name: Build Erlang
-  #       run: |
-  #         cd otp
-  #         export ERL_TOP=`pwd`
-  #         make
-  #     - name: Test Erlang
-  #       run: |
-  #         cd otp
-  #         export ERL_TOP=`pwd`
-  #         make release_tests
-  #         cd release/tests/test_server
-  #         $ERL_TOP/bin/erl -s ts install -s ts smoke_test batch -s init stop
-  #     - name: Install Erlang in folder
-  #       run: |
-  #         cd otp
-  #         export ERL_TOP=`pwd`
-  #         make install
-  #     - name: Verify Erlang
-  #       run: |
-  #         cd erlang
-  #         ls -lA
+  build-linux-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup dependencies
+        run: |
+          sudo apt update
+          sudo apt upgrade -y
+          # Github's runner environment already has tar, make, and gcc installed
+          # Install perl
+          sudo apt install -y perl
+          # Instal ncurses headers
+          sudo apt-get install -y ncurses-dev
+          # Install OpenSSL and Development Headers
+          sudo apt install -y openssl libssl-dev
+      - name: Verify Dependencies
+        run: |
+          tar --version
+          make --version
+          gcc --version
+          perl --version
+          openssl version
+      - name: Checkout Erlang
+        uses: actions/checkout@v4
+        with:
+          repository: erlang/otp
+      - name: Move Erlang Source
+        run: |
+          mkdir -p otp
+          mv * otp/
+      - name: Configure Erlang Build
+        run: |
+          mkdir erlang
+          cd otp
+          export ERL_TOP=`pwd`
+          ./configure --prefix=../erlang
+      - name: Build Erlang
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          make
+      - name: Test Erlang
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          make release_tests
+          cd release/tests/test_server
+          $ERL_TOP/bin/erl -s ts install -s ts smoke_test batch -s init stop
+      - name: Install Erlang in folder
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          make install
+      - name: Verify Erlang Build
+        run: |
+          cd erlang
+          ls -lA
 
   build-windows-release:
     runs-on: windows-latest
@@ -96,26 +100,19 @@ jobs:
           mkdir erlang
           cd otp
           export ERL_TOP=`pwd`
-          ./otp_build env_win32 x64
-      # - name: Build Erlang
-      #   run: |
-      #     cd otp
-      #     export ERL_TOP=`pwd`
-      #     make
-      # - name: Test Erlang
-      #   run: |
-      #     cd otp
-      #     export ERL_TOP=`pwd`
-      #     make release_tests
-      #     cd release/tests/test_server
-      #     $ERL_TOP/bin/erl -s ts install -s ts smoke_test batch -s init stop
-      # - name: Install Erlang in folder
-      #   run: |
-      #     cd otp
-      #     export ERL_TOP=`pwd`
-      #     make install
-      # - name: Verify Erlang
-      #   run: |
-      #     cd erlang
-      #     ls -lA
-          
+          eval `./otp_build env_win32 x64`
+          ./otp_build configure
+      - name: Build Erlang
+        shell: bash
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          ./otp_build boot -a
+          ./otp_build release -a
+      - name: Verify Erlang Build
+        shell: bash
+        run: |
+          cd otp/release
+          ls -lA
+          cd win32
+          ls -lA
