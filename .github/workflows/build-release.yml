@@ -2,13 +2,10 @@ name: Build Release
 
 on:
   workflow_dispatch:
-    # inputs:
-    #   msvcpp_redist_url:
-    #     description: "Url to Microsoft Visual C++ redistributable"
-    #     required: true
-    #   windows_openssl_url:
-    #     description: "Url to OpenSSL Installer for Windows"
-    #     required: true
+    inputs:
+      windows_openssl_url:
+        description: "Url to OpenSSL Installer for Windows"
+        required: true
 
 
 jobs:
@@ -74,82 +71,58 @@ jobs:
     steps:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-      # - name: Install Chocolatey
-      #   run: |
-      #     Set-ExecutionPolicy Bypass -Scope Process -Force; `
-      #     [System.Net.ServicePointManager]::SecurityProtocol = `
-      #     [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-      #     iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-      # - name: Install make, mingw, and msvc++
-      #   run: |
-      #     choco install make -y
-      #     choco install mingw -y --package-parameters "--arch x64"
-      #     choco install vcredist140 -y --force
-      # - name: Setup msvc++
-      #   run: |
-      #     $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
-      #     Invoke-WebRequest -Uri $redistUrl -OutFile 'vcredist.exe'
-      #     Write-Output 'Downloaded MSVC++ redistributable.'
-      #     Start-Process -FilePath "vcredist.exe" -ArgumentList '/quiet', '/norestart' -Wait
-      #     Write-Output 'Installed MSVC++ redistributable.'
-      # - name: Setup OpenSSL
-      #   run: |
-      #     # Install OpenSSL and Development Headers
-      #     $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
-      #     Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
-      #     Write-Output 'Downloaded OpenSSL installer.'
-      #     Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
-      #     Write-Output 'Installed OpenSSL.'
+      - name: Setup OpenSSL
+        run: |
+          # Install OpenSSL and Development Headers
+          $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
+          Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
+          Write-Output 'Downloaded OpenSSL installer.'
+          Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent', '/DIR=C:\OpenSSL-Win64' -Wait
+          Write-Output 'Installed OpenSSL to C:\OpenSSL-Win64.'
       - name: Setup WSL
         uses: Vampire/setup-wsl@v3
       - name: Install build tools
         shell: wsl-bash {0}
         run: |
-          sudo apt update && sudo apt install -y g++-mingw-w64 gcc-mingw-w64 make openssl libssl-dev
-      - name: Verify Dependencies
-        shell: wsl-bash {0}
-        run: |
-          make --version
-          gcc --version
+          sudo apt update && sudo apt install -y g++-mingw-w64 gcc-mingw-w64 make
       - name: Checkout Erlang
         uses: actions/checkout@v4
         with:
           repository: erlang/otp
       - name: Move Erlang Source
+        shell: wsl-bash {0}
         run: |
-          # Create the new subfolder if it doesn't exist
-          $otp = "./otp"
-          if (-not (Test-Path -Path $otp)) {
-              New-Item -ItemType Directory -Path $otp
-          }
-
-          # Move all items from the current directory to the new subfolder
-          Get-ChildItem -Path . -Exclude otp | Move-Item -Destination $otp
+          mkdir -p /mnt/c/src/otp
+          mv * /mnt/c/src/otp/
       - name: Configure Erlang Build
         shell: wsl-bash {0}
         run: |
-          cd otp
-          export ERL_TOP=`pwd`
+          export ERL_TOP=/mnt/c/src/otp
+          cd $ERL_TOP
           echo "ERL_TOP=$ERL_TOP"
+          pwd
           eval `./otp_build env_win32 x64`
           ./otp_build configure
       - name: If Configure Failed
         if: failure()
         shell: wsl-bash {0}
         run: |
-          cd otp
+          export ERL_TOP=/mnt/c/src/otp
+          cd $ERL_TOP
           cat config.log
       - name: Build Erlang
         shell: wsl-bash {0}
         run: |
-          cd otp
-          export ERL_TOP=`pwd`
+          export ERL_TOP=/mnt/c/src/otp
+          cd $ERL_TOP
           ./otp_build boot -a
           ./otp_build release -a
       - name: Verify Erlang Build
         shell: wsl-bash {0}
         run: |
-          cd otp/release
+          export ERL_TOP=/mnt/c/src/otp
+          cd $ERL_TOP
+          cd release
           ls -lA
           cd win32
           ls -lA
