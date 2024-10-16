@@ -2,13 +2,13 @@ name: Build Release
 
 on:
   workflow_dispatch:
-    inputs:
-      msvcpp_redist_url:
-        description: "Url to Microsoft Visual C++ redistributable"
-        required: true
-      windows_openssl_url:
-        description: "Url to OpenSSL Installer for Windows"
-        required: true
+    # inputs:
+    #   msvcpp_redist_url:
+    #     description: "Url to Microsoft Visual C++ redistributable"
+    #     required: true
+    #   windows_openssl_url:
+    #     description: "Url to OpenSSL Installer for Windows"
+    #     required: true
 
 
 jobs:
