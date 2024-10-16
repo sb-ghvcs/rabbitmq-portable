@@ -80,17 +80,18 @@ jobs:
           [System.Net.ServicePointManager]::SecurityProtocol = `
           [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
           iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-      - name: Install make and gcc
+      - name: Install make, mingw, and msvc++
         run: |
           choco install make -y
           choco install mingw -y --package-parameters "--arch x64"
-      - name: Setup msvc++
-        run: |
-          $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
-          Invoke-WebRequest -Uri $redistUrl -OutFile 'vcredist.exe'
-          Write-Output 'Downloaded MSVC++ redistributable.'
-          Start-Process -FilePath "vcredist.exe" -ArgumentList '/quiet', '/norestart' -Wait
-          Write-Output 'Installed MSVC++ redistributable.'
+          choco install vcredist140 -y
+      # - name: Setup msvc++
+      #   run: |
+      #     $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
+      #     Invoke-WebRequest -Uri $redistUrl -OutFile 'vcredist.exe'
+      #     Write-Output 'Downloaded MSVC++ redistributable.'
+      #     Start-Process -FilePath "vcredist.exe" -ArgumentList '/quiet', '/norestart' -Wait
+      #     Write-Output 'Installed MSVC++ redistributable.'
       - name: Setup OpenSSL
         run: |
           # Install OpenSSL and Development Headers
