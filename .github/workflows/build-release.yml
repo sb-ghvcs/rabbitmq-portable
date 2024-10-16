@@ -83,8 +83,8 @@ jobs:
         run: |
           # Create the new subfolder if it doesn't exist
           $otp = "./otp"
-          if (-not (Test-Path -Path $newFolder)) {
-              New-Item -ItemType Directory -Path $newFolder
+          if (-not (Test-Path -Path $otp)) {
+              New-Item -ItemType Directory -Path $otp
           }
 
           # Move all items from the current directory to the new subfolder
