@@ -37,7 +37,8 @@ jobs:
       - name: Move Erlang Source
         run: |
           mkdir -p otp
-          mv * otp/
+          shopt -s extglob  # Enable extended pattern matching operators
+          mv !(otp) otp/ 
       - name: Configure Erlang Build
         run: |
           mkdir erlang
@@ -71,7 +72,12 @@ jobs:
     steps:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Setup dependencies
+      - name: Setup Compilers
+        uses: cygwin/cygwin-install-action@v4 
+        with:
+          platform: x86_64
+          packages: make gcc-g++
+      - name: Setup OpenSSL
         run: |
           # Install OpenSSL and Development Headers
           $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
@@ -79,6 +85,11 @@ jobs:
           Write-Output 'Downloaded OpenSSL installer.'
           Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent' -Wait
           Write-Output 'Installed OpenSSL.'
+      - name: Verify Dependencies
+        run: |
+          make --version
+          gcc --version
+          cl.exe
       - name: Checkout Erlang
         uses: actions/checkout@v4
         with:
