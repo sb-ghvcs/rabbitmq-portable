@@ -74,11 +74,16 @@ jobs:
     steps:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Setup make and gcc
-        uses: cygwin/cygwin-install-action@v4 
-        with:
-          platform: x86_64
-          packages: make gcc-g++
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force; `
+          [System.Net.ServicePointManager]::SecurityProtocol = `
+          [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      - name: Install make and gcc
+        run: |
+          choco install make -y
+          choco install mingw -y --package-parameters "--arch x64"
       - name: Setup msvc++
         run: |
           $redistUrl = '${{ github.event.inputs.msvcpp_redist_url }}'
@@ -115,10 +120,9 @@ jobs:
       - name: Configure Erlang Build
         shell: bash
         run: |
-          ls -lA
-          mkdir erlang
           cd otp
           export ERL_TOP=`pwd`
+          echo "ERL_TOP=$ERL_TOP"
           eval `./otp_build env_win32 x64`
           ./otp_build configure
       - name: Build Erlang
