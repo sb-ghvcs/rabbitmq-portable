@@ -80,6 +80,7 @@ jobs:
           curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
       - name: Get Erlang Source Version
         id: erlang-version
+        shell: bash
         run: |
           version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
           echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
