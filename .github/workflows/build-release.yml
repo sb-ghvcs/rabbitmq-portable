@@ -32,20 +32,25 @@ jobs:
       - name: Download Erlang Source
         run: |
           curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
+      - name: Get Erlang Source Version
+        id: erlang-version
+        run: |
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Configure Erlang Build
         run: |
           tar -zxf otp.tar.gz
-          cd otp
+          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
           export ERL_TOP=`pwd`
           ./configure --prefix=$(readlink -f "../erlang")
       - name: Build Erlang
         run: |
-          cd otp
+          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
           export ERL_TOP=`pwd`
           make
       - name: Install Erlang in folder
         run: |
-          cd otp
+          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
           export ERL_TOP=`pwd`
           make install
       - name: Verify Erlang Build
@@ -73,10 +78,15 @@ jobs:
       - name: Download Erlang Source
         run: |
           curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
+      - name: Get Erlang Source Version
+        id: erlang-version
+        run: |
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Compile Erlang
         run: |
           tar -zxf otp.tar.gz
-          cd otp
+          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
           export ERL_TOP=`pwd`
           export MAKEFLAGS=-j$(($(nproc) + 2))
           export ERLC_USE_SERVER=true
@@ -93,8 +103,7 @@ jobs:
           ./otp_build release -a
       - name: Verify Erlang Build
         run: |
-          cd otp
-          export ERL_TOP=`pwd`
+          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
           cd release
           ls -lA
           cd win32
