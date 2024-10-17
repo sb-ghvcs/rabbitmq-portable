@@ -2,6 +2,10 @@ name: Build Release
 
 on:
   workflow_dispatch:
+    inputs:
+      erlang_source_tar_url:
+        description: Erlang Source Tar URL
+        required: true
 
 jobs:
   build-linux-release:
@@ -25,17 +29,12 @@ jobs:
           gcc --version
           perl --version
           openssl version
-      - name: Checkout Erlang
-        uses: actions/checkout@v4
-        with:
-          repository: erlang/otp
-      - name: Move Erlang Source
+      - name: Download Erlang Source
         run: |
-          mkdir -p otp
-          shopt -s extglob  # Enable extended pattern matching operators
-          mv !(otp) otp/ 
+          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
       - name: Configure Erlang Build
         run: |
+          tar -zxf otp.tar.gz
           cd otp
           export ERL_TOP=`pwd`
           ./configure --prefix=$(readlink -f "../erlang")
@@ -71,22 +70,18 @@ jobs:
         run: |
           choco install openssl --version=3.1.1
           IF EXIST "c:\\Program Files\\OpenSSL-Win64" (move "c:\\Program Files\\OpenSSL-Win64" "c:\\OpenSSL-Win64") ELSE (move "c:\\Program Files\\OpenSSL" "c:\\OpenSSL-Win64")
-      - name: Checkout Erlang
-        uses: actions/checkout@v4
-        with:
-          repository: erlang/otp
-      - name: Move Erlang Source
+      - name: Download Erlang Source
         run: |
-          mkdir -p otp
-          shopt -s extglob  # Enable extended pattern matching operators
-          mv !(otp) otp/ 
+          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
       - name: Compile Erlang
         run: |
+          tar -zxf otp.tar.gz
           cd otp
           export ERL_TOP=`pwd`
           export MAKEFLAGS=-j$(($(nproc) + 2))
           export ERLC_USE_SERVER=true
           export ERTS_SKIP_DEPEND=true
+          eval `./otp_build env_win32 x64`
           ./otp_build configure
           if cat erts/CONF_INFO ||
              grep -v "Static linking with OpenSSL 3.0" lib/*/CONF_INFO ||
