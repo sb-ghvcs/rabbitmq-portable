@@ -6,9 +6,21 @@ on:
       erlang_source_tar_url:
         description: Erlang Source Tar URL
         required: true
+      build_windows:
+        description: Build Windows Release
+        required: false
+        default: true
+        type: boolean
+      build_linux:
+        description: Build Linux Release
+        required: false
+        default: true
+        type: boolean
+      
 
 jobs:
   build-linux-release:
+    if: inputs.build_linux
     runs-on: ubuntu-latest
     steps:
       - name: Setup dependencies
@@ -60,6 +72,7 @@ jobs:
           ls -lA
 
   build-windows-release:
+    if: inputs.build_windows
     defaults:
       run:
         shell: wsl-bash {0}
@@ -78,16 +91,11 @@ jobs:
       - name: Download Erlang Source
         run: |
           curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
-      - name: Get Erlang Source Version
-        id: erlang-version
-        shell: bash
-        run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-          echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Compile Erlang
         run: |
           tar -zxf otp.tar.gz
-          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
+          cd otp_src_$version
           export ERL_TOP=`pwd`
           export MAKEFLAGS=-j$(($(nproc) + 2))
           export ERLC_USE_SERVER=true
@@ -104,7 +112,8 @@ jobs:
           ./otp_build release -a
       - name: Verify Erlang Build
         run: |
-          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
+          cd otp_src_$version
           cd release
           ls -lA
           cd win32
