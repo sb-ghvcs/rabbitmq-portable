@@ -95,12 +95,12 @@ jobs:
           mkdir -p /mnt/c/src/otp
           mv * /mnt/c/src/otp/
       - name: Configure Erlang Build
-        shell: wsl-bash {0}
         run: |
           export PATH
           export ERL_TOP=/mnt/c/src/otp
           cd $ERL_TOP
           echo "ERL_TOP=$ERL_TOP"
+          where bash
           pwd
           eval `./otp_build env_win32 x64`
           ./otp_build configure
@@ -112,7 +112,6 @@ jobs:
           cd $ERL_TOP
           cat config.log
       - name: Build Erlang
-        shell: wsl-bash {0}
         run: |
           export PATH
           export ERL_TOP=/mnt/c/src/otp
@@ -120,7 +119,6 @@ jobs:
           ./otp_build boot -a
           ./otp_build release -a
       - name: Verify Erlang Build
-        shell: wsl-bash {0}
         run: |
           export ERL_TOP=/mnt/c/src/otp
           cd $ERL_TOP
