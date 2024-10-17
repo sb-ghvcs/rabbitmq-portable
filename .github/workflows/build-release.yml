@@ -35,7 +35,7 @@ jobs:
       - name: Get Erlang Source Version
         id: erlang-version
         run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
           echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Configure Erlang Build
         run: |
@@ -81,7 +81,7 @@ jobs:
       - name: Get Erlang Source Version
         id: erlang-version
         run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
           echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Compile Erlang
         run: |
