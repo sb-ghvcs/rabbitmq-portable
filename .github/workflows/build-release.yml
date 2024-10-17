@@ -2,10 +2,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-    inputs:
-      erlang_source_tar_url:
-        description: Erlang Source Tar URL
-        required: true
 
 jobs:
   build-linux-release:
@@ -30,12 +26,15 @@ jobs:
           perl --version
           openssl version
       - name: Download Erlang Source
-        run: |
-          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
+        uses: actions/download-artifact@v4
+        with:
+          repository: erlang/otp
+          pattern: otp_src_*.tar.gz
       - name: Get Erlang Source Version
         id: erlang-version
         run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          filename=$(ls otp_src_*.tar.gz 2>/dev/null)
+          version=$(echo "$filename" | grep -oP '\d+\.\d+\.\d+')
           echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Configure Erlang Build
         run: |
@@ -76,12 +75,15 @@ jobs:
           choco install openssl --version=3.1.1
           IF EXIST "c:\\Program Files\\OpenSSL-Win64" (move "c:\\Program Files\\OpenSSL-Win64" "c:\\OpenSSL-Win64") ELSE (move "c:\\Program Files\\OpenSSL" "c:\\OpenSSL-Win64")
       - name: Download Erlang Source
-        run: |
-          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
+        uses: actions/download-artifact@v4
+        with:
+          repository: erlang/otp
+          pattern: otp_src_*.tar.gz
       - name: Get Erlang Source Version
         id: erlang-version
         run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)"
+          filename=$(ls otp_src_*.tar.gz 2>/dev/null)
+          version=$(echo "$filename" | grep -oP '\d+\.\d+\.\d+')
           echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
       - name: Compile Erlang
         run: |
