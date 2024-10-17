@@ -2,10 +2,10 @@ name: Build Release
 
 on:
   workflow_dispatch:
-    inputs:
-      windows_openssl_url:
-        description: "Url to OpenSSL Installer for Windows"
-        required: true
+    # inputs:
+    #   windows_openssl_url:
+    #     description: "Url to OpenSSL Installer for Windows"
+    #     required: true
 
 
 jobs:
