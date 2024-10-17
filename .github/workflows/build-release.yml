@@ -2,11 +2,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-    # inputs:
-    #   windows_openssl_url:
-    #     description: "Url to OpenSSL Installer for Windows"
-    #     required: true
-
 
 jobs:
   build-linux-release:
@@ -60,66 +55,52 @@ jobs:
           cd erlang
           ls -lA
 
-  # build-windows-release:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Setup MSBuild
-  #       uses: microsoft/setup-msbuild@v2
-  #     - name: Setup OpenSSL
-  #       run: |
-  #         # Install OpenSSL and Development Headers
-  #         $installerUrl = '${{ github.event.inputs.windows_openssl_url }}'
-  #         Invoke-WebRequest -Uri $installerUrl -OutFile 'openssl_installer.exe'
-  #         Write-Output 'Downloaded OpenSSL installer.'
-  #         Start-Process -FilePath 'openssl_installer.exe' -ArgumentList '/silent', '/DIR=C:\OpenSSL-Win64' -Wait
-  #         Write-Output 'Installed OpenSSL to C:\OpenSSL-Win64.'
-  #     - name: Setup WSL
-  #       uses: Vampire/setup-wsl@v3
-  #     - name: Install build tools
-  #       shell: wsl-bash {0}
-  #       run: |
-  #         sudo apt update && sudo apt install -y g++-mingw-w64 gcc-mingw-w64 make
-  #     - name: Checkout Erlang
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: erlang/otp
-  #     - name: Move Erlang Source
-  #       shell: wsl-bash {0}
-  #       run: |
-  #         mkdir -p /mnt/c/src/otp
-  #         mv * /mnt/c/src/otp/
-  #     - name: Configure Erlang Build
-  #       run: |
-  #         bash
-  #         export PATH
-  #         export ERL_TOP=/mnt/c/src/otp
-  #         cd $ERL_TOP
-  #         echo "ERL_TOP=$ERL_TOP"
-  #         where bash
-  #         pwd
-  #         exit
-  #         eval `./otp_build env_win32 x64`
-  #         ./otp_build configure
-  #     - name: If Configure Failed
-  #       if: failure()
-  #       shell: wsl-bash {0}
-  #       run: |
-  #         export ERL_TOP=/mnt/c/src/otp
-  #         cd $ERL_TOP
-  #         cat config.log
-  #     - name: Build Erlang
-  #       run: |
-  #         export PATH
-  #         export ERL_TOP=/mnt/c/src/otp
-  #         cd $ERL_TOP
-  #         ./otp_build boot -a
-  #         ./otp_build release -a
-  #     - name: Verify Erlang Build
-  #       shell: wsl-bash {0}
-  #       run: |
-  #         export ERL_TOP=/mnt/c/src/otp
-  #         cd $ERL_TOP
-  #         cd release
-  #         ls -lA
-  #         cd win32
-  #         ls -lA
+  build-windows-release:
+    defaults:
+      run:
+        shell: wsl-bash {0}
+    runs-on: windows-2022
+    steps:
+      - uses: Vampire/setup-wsl@v3.1.1
+        with:
+          distribution: Ubuntu-18.04
+      - name: Install WSL dependencies
+        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
+      - name: Install openssl
+        shell: cmd
+        run: |
+          choco install openssl --version=3.1.1
+          IF EXIST "c:\\Program Files\\OpenSSL-Win64" (move "c:\\Program Files\\OpenSSL-Win64" "c:\\OpenSSL-Win64") ELSE (move "c:\\Program Files\\OpenSSL" "c:\\OpenSSL-Win64")
+      - name: Checkout Erlang
+        uses: actions/checkout@v4
+        with:
+          repository: erlang/otp
+      - name: Move Erlang Source
+        run: |
+          mkdir -p otp
+          shopt -s extglob  # Enable extended pattern matching operators
+          mv !(otp) otp/ 
+      - name: Compile Erlang
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          export MAKEFLAGS=-j$(($(nproc) + 2))
+          export ERLC_USE_SERVER=true
+          export ERTS_SKIP_DEPEND=true
+          ./otp_build configure
+          if cat erts/CONF_INFO ||
+             grep -v "Static linking with OpenSSL 3.0" lib/*/CONF_INFO ||
+             cat lib/*/SKIP ||
+             cat lib/SKIP-APPLICATIONS; then
+             exit 1
+          fi
+          ./otp_build boot -a
+          ./otp_build release -a
+      - name: Verify Erlang Build
+        run: |
+          cd otp
+          export ERL_TOP=`pwd`
+          cd release
+          ls -lA
+          cd win32
+          ls -lA
