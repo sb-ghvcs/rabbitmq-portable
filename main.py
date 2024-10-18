@@ -1,3 +1,4 @@
+import configparser
 import os
 import glob
 import sys
@@ -27,6 +28,16 @@ def set_erlang_env() -> None:
     erlang_dir = os.path.join(script_dir, "external/erlang")
     absolute_erts_dir = os.path.abspath(erlang_dir)
     os.environ["ERLANG_HOME"] = absolute_erts_dir
+    # Update erl.ini
+    erl_bin_dir = os.path.join(absolute_erts_dir, "bin")
+    erl_ini = os.path.join(erl_bin_dir, "erl.ini")
+    config = configparser.ConfigParser()
+    config.read(erl_ini)
+    config["erlang"]["Bindir"] = erl_bin_dir
+    config["erlang"]["Rootdir"] = absolute_erts_dir
+    with open(erl_ini, "w", encoding="utf-8") as configfile:
+      config.write(configfile)
+
   else:
     erts_dir_pattern = "erts-*"
     formed_erts_dir_pattern = os.path.join(
