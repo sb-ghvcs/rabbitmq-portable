@@ -22,32 +22,29 @@ if not (IS_WINDOWS or IS_LINUX):
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def get_erlang_path() -> str:
-  erts_dir_pattern = "erts-*"
+def set_erlang_env() -> None:
   if IS_WINDOWS:
     erlang_dir = os.path.join(script_dir, "external/erlang")
     absolute_erts_dir = os.path.abspath(erlang_dir)
+    os.environ["ERLANG_HOME"] = absolute_erts_dir
   else:
+    erts_dir_pattern = "erts-*"
     formed_erts_dir_pattern = os.path.join(
       script_dir, "external/erlang/lib/erlang", erts_dir_pattern
     )
     erts_dir = glob.glob(formed_erts_dir_pattern)
     if len(erts_dir) == 0:
       raise ValueError(f"Could not find erts directory in {formed_erts_dir_pattern}")
-    absolute_erts_dir = os.path.abspath(erts_dir[0])
-  return absolute_erts_dir
+    absolute_erts_dir = os.path.join(os.path.abspath(erts_dir[0]), "bin")
+    os.environ["PATH"] = absolute_erts_dir + os.pathsep + os.environ["PATH"]
 
 
 def main() -> None:
   server_dir = os.path.join(script_dir, "external/rabbitmq_server/sbin")
-  erlang_dir = get_erlang_path()
+  set_erlang_env()
   if IS_WINDOWS:
-    # set ERLANG_HOME variable
-    os.environ["ERLANG_HOME"] = erlang_dir
     server_path = os.path.join(server_dir, "rabbitmq-server.bat")
   else:
-    # Append erlang to path
-    sys.path.append(erlang_dir)
     server_path = os.path.join(server_dir, "rabbitmq-server")
 
   def signal_handler(_signum: int, _frame: Optional[FrameType]) -> None:
