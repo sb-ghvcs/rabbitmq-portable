@@ -169,6 +169,7 @@ jobs:
           ./otp_build configure
           ./otp_build boot -a
           ./otp_build release -a
+          cp -r bin release/win32/
       - name: Verify Erlang Build
         run: |
           cd $ERLANG_SOURCE_DIR
