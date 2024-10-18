@@ -17,8 +17,5 @@ We build Erlang from source, since erlang doesn't provide a portable zip. We bui
 Then, we download rabbitmq's binaries (zip for windows, tar.xf for linux), unpack it, put it in a directory with erlang, and have a start script that takes care of setting any env variables needed for running it. We then package everything with PyInstaller into a single executable.
 
 ## Last run Inputs:
-- Erlang Source Tar URL: https://github.com/erlang/otp/releases/download/OTP-27.1.2/otp_src_27.1.2.tar.gz
-- RabbitMQ Tar URL for Linux: https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.0.2/rabbitmq-server-generic-unix-4.0.2.tar.xz
-- RabbitMQ Zip URL for Windows: https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.0.2/rabbitmq-server-windows-4.0.2.zip
 - Erlang Version: 27.1.2
 - RabbitMQ Version: 4.0.2
