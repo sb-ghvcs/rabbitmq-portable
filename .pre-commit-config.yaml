@@ -3,6 +3,6 @@ repos:
     hooks:
       - id: Run cblack
         name: Run cblack
-        entry: cblack .
+        entry: sh -c 'cblack . && git add .'
         language: system
         files: \.py$
