@@ -19,7 +19,9 @@ on:
         required: false
         default: true
         type: boolean
-      
+
+permissions:
+  contents: write
 
 jobs:
   build-linux-release:
@@ -128,22 +130,21 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install Poetry
+        shell: pwsh
+        run: |
+          python -m pip install poetry
       - uses: Vampire/setup-wsl@v3.1.1
         with:
           distribution: Ubuntu-18.04
       - name: Install WSL dependencies
         run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
-      - name: Install Python
-        run: |
-          sudo add-apt-repository ppa:deadsnakes/ppa
-          sudo apt install -y python3.11 python3.11-venv python3.11-dev
-          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
-          python3 --version
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3.11 -
-          poetry --version
       - name: Install Poetry Dependencies
+        shell: pwsh
         run: |
           poetry install
       - name: Install openssl
