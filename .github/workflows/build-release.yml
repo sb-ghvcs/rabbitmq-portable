@@ -131,7 +131,7 @@ jobs:
           python-version: 3.11
       - name: Install Poetry
         run: |
-          pip install poetry
+          python -m pip install poetry
       - uses: Vampire/setup-wsl@v3.1.1
         with:
           distribution: Ubuntu-18.04
