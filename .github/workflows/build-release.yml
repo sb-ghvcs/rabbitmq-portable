@@ -125,16 +125,16 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+      - uses: Vampire/setup-wsl@v3.1.1
+        with:
+          distribution: Ubuntu-18.04
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
       - name: Install Poetry
         run: |
-          python -m pip install poetry
-      - uses: Vampire/setup-wsl@v3.1.1
-        with:
-          distribution: Ubuntu-18.04
+          pip install poetry
       - name: Install WSL dependencies
         run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
       - name: Install openssl
