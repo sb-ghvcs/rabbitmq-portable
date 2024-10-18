@@ -123,6 +123,7 @@ jobs:
       ERLANG_SOURCE_DIR: otp_src_${{ github.event.inputs.erlang_version }}
       RABBITMQ_VERSION: ${{ github.event.inputs.rabbitmq_version }}
       RABBITMQ_ZIP_URL: https://github.com/rabbitmq/rabbitmq-server/releases/download/v${{ github.event.inputs.rabbitmq_version }}/rabbitmq-server-windows-${{ github.event.inputs.rabbitmq_version }}.zip
+      WSLENV: ERLANG_VERSION:ERLANG_TAR_URL:ERLANG_SOURCE_DIR:RABBITMQ_VERSION:RABBITMQ_ZIP_URL
     defaults:
       run:
         shell: wsl-bash {0}
