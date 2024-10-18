@@ -18,3 +18,7 @@ Then, we download rabbitmq's binaries (zip for windows, tar.xf for linux), unpac
 
 ## Last run Inputs:
 - Erlang Source Tar URL: https://github.com/erlang/otp/releases/download/OTP-27.1.2/otp_src_27.1.2.tar.gz
+- RabbitMQ Tar URL for Linux: https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.0.2/rabbitmq-server-generic-unix-4.0.2.tar.xz
+- RabbitMQ Zip URL for Windows: https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.0.2/rabbitmq-server-windows-4.0.2.zip
+- Erlang Version: 27.1.2
+- RabbitMQ Version: 4.0.2

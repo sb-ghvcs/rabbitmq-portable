@@ -3,8 +3,11 @@ name: Build Release
 on:
   workflow_dispatch:
     inputs:
-      erlang_source_tar_url:
-        description: Erlang Source Tar URL
+      erlang_version:
+        description: Erlang Version
+        required: true
+      rabbitmq_version:
+        description: RabbitMQ Version
         required: true
       build_windows:
         description: Build Windows Release
@@ -22,7 +25,22 @@ jobs:
   build-linux-release:
     if: inputs.build_linux
     runs-on: ubuntu-latest
+    env:
+      ERLANG_VERSION: ${{ github.event.inputs.erlang_version }}
+      ERLANG_TAR_URL: https://github.com/erlang/otp/releases/download/OTP-${{ github.event.inputs.erlang_version }}/otp_src_${{ github.event.inputs.erlang_version }}.tar.gz
+      ERLANG_SOURCE_DIR: otp_src_${{ github.event.inputs.erlang_version }}
+      RABBITMQ_VERSION: ${{ github.event.inputs.rabbitmq_version }}
+      RABBITMQ_TAR_URL: https://github.com/rabbitmq/rabbitmq-server/releases/download/v${{ github.event.inputs.rabbitmq_version }}/rabbitmq-server-generic-unix-${{ github.event.inputs.rabbitmq_version }}.tar.xz
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install Poetry
+        run: |
+          pip install poetry
       - name: Setup dependencies
         run: |
           sudo apt update
@@ -43,41 +61,77 @@ jobs:
           openssl version
       - name: Download Erlang Source
         run: |
-          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
-      - name: Get Erlang Source Version
-        id: erlang-version
-        run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-          echo "ERLANG_SOURCE_DIR=otp_src_$version" >> $GITHUB_OUTPUT
-      - name: Configure Erlang Build
-        run: |
+          curl -L -o otp.tar.gz $ERLANG_TAR_URL
           tar -zxf otp.tar.gz
-          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
+          rm -f otp.tar.gz
+      - name: Compile Erlang
+        run: |
+          cd $ERLANG_SOURCE_DIR
           export ERL_TOP=`pwd`
           ./configure --prefix=$(readlink -f "../erlang")
-      - name: Build Erlang
-        run: |
-          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
-          export ERL_TOP=`pwd`
           make
       - name: Install Erlang in folder
         run: |
-          cd ${{ steps.erlang-version.outputs.ERLANG_SOURCE_DIR }}
+          cd $ERLANG_SOURCE_DIR
           export ERL_TOP=`pwd`
           make install
-      - name: Verify Erlang Build
+          cd ..
+          rm -rf $ERLANG_SOURCE_DIR
+      - name: Download RabbitMQ Binaries
         run: |
-          ls -lA
-          cd erlang
-          ls -lA
-
+          curl -L -o rabbitmq.tar.xz $RABBITMQ_TAR_URL
+          tar -xvf rabbitmq.tar.xz
+          rm -f rabbitmq.tar.xz
+      - name: Move Binaries into External
+        run: |
+          mkdir -p external/rabbitmq_server
+          mv erlang external/
+          mv rabbitmq_server-$RABBITMQ_VERSION/* external/rabbitmq_server
+          rm -rf rabbitmq_server-$RABBITMQ_VERSION
+      - name: Build and Package Release
+        run: |
+          poetry run pyinstaller rabbitmq.spec
+          mv dist/rabbitmq ./rabbitmq
+          tar -czf rabbitmq-linux.tar.gz ./rabbitmq
+          rm -rf ./rabbitmq
+          rm -rf dist
+      - name: Check and Create Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git rev-parse "${{ env.RABBITMQ_VERSION }}" >/dev/null 2>&1; then
+            git tag "${{ env.RABBITMQ_VERSION }}"
+            git push origin "${{ env.RABBITMQ_VERSION }}"
+          fi
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RABBITMQ_VERSION }}
+          files: |
+            rabbitmq-linux.tar.gz
+          
   build-windows-release:
     if: inputs.build_windows
+    env:
+      ERLANG_VERSION: ${{ github.event.inputs.erlang_version }}
+      ERLANG_TAR_URL: https://github.com/erlang/otp/releases/download/OTP-${{ github.event.inputs.erlang_version }}/otp_src_${{ github.event.inputs.erlang_version }}.tar.gz
+      ERLANG_SOURCE_DIR: otp_src_${{ github.event.inputs.erlang_version }}
+      RABBITMQ_VERSION: ${{ github.event.inputs.rabbitmq_version }}
+      RABBITMQ_ZIP_URL: https://github.com/rabbitmq/rabbitmq-server/releases/download/v${{ github.event.inputs.rabbitmq_version }}/rabbitmq-server-windows-${{ github.event.inputs.rabbitmq_version }}.zip
     defaults:
       run:
         shell: wsl-bash {0}
     runs-on: windows-2022
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install Poetry
+        run: |
+          pip install poetry
       - uses: Vampire/setup-wsl@v3.1.1
         with:
           distribution: Ubuntu-18.04
@@ -90,12 +144,12 @@ jobs:
           IF EXIST "c:\\Program Files\\OpenSSL-Win64" (move "c:\\Program Files\\OpenSSL-Win64" "c:\\OpenSSL-Win64") ELSE (move "c:\\Program Files\\OpenSSL" "c:\\OpenSSL-Win64")
       - name: Download Erlang Source
         run: |
-          curl -L -o otp.tar.gz ${{ inputs.erlang_source_tar_url }}
+          curl -L -o otp.tar.gz $ERLANG_TAR_URL
+          tar -zxf otp.tar.gz
+          rm -f otp.tar.gz
       - name: Compile Erlang
         run: |
-          tar -zxf otp.tar.gz
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-          cd otp_src_$version
+          cd $ERLANG_SOURCE_DIR
           export ERL_TOP=`pwd`
           export MAKEFLAGS=-j$(($(nproc) + 2))
           export ERLC_USE_SERVER=true
@@ -106,9 +160,44 @@ jobs:
           ./otp_build release -a
       - name: Verify Erlang Build
         run: |
-          version=$(echo ${{ inputs.erlang_source_tar_url}} | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-          cd otp_src_$version
+          cd $ERLANG_SOURCE_DIR
           cd release
           ls -lA
           cd win32
           ls -lA
+      - name: Download RabbitMQ Binaries
+        run: |
+          curl -L -o rabbitmq.zip $RABBITMQ_ZIP_URL
+          unzip rabbitmq.zip
+          rm -f rabbitmq.zip
+      - name: Move Binaries into External
+        run: |
+          mkdir -p external/rabbitmq_server
+          mkdir -p external/erlang
+          mv $ERLANG_SOURCE_DIR/release/win32/* external/erlang
+          mv rabbitmq_server-$RABBITMQ_VERSION/* external/rabbitmq_server
+          cd external/erlang
+          rm -f Install.exe
+          rm -f Install.ini
+      - name: Build and Package Release
+        shell: pwsh
+        run: |
+          poetry run pyinstaller rabbitmq.spec
+          Move-Item -Path 'dist\rabbitmq' -Destination 'rabbitmq'
+          Compress-Archive -Path 'rabbitmq' -DestinationPath 'rabbitmq-windows.zip'
+          Remove-Item -Recurse -Force 'rabbitmq'
+          Remove-Item -Recurse -Force 'dist'
+      - name: Check and Create Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git rev-parse "${{ env.RABBITMQ_VERSION }}" >/dev/null 2>&1; then
+            git tag "${{ env.RABBITMQ_VERSION }}"
+            git push origin "${{ env.RABBITMQ_VERSION }}"
+          fi
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RABBITMQ_VERSION }}
+          files: |
+            rabbitmq-windows.zip
