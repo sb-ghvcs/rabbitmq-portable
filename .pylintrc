@@ -1,0 +1,19 @@
+[MASTER]
+ignore=CVS
+disable=C0114, C0115, C0116
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=5
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=7
+max-public-methods=20
+
+[INDENTATION]
+indent-string='  '
