@@ -131,15 +131,11 @@ jobs:
       - uses: Vampire/setup-wsl@v3.1.1
         with:
           distribution: Ubuntu-18.04
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+      - name: Install WSL dependencies
+        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip python3 python3-pip
       - name: Install Poetry
         run: |
-          pip install poetry
-      - name: Install WSL dependencies
-        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
+          pip3 install poetry
       - name: Install Poetry Dependencies
         run: |
           poetry install
