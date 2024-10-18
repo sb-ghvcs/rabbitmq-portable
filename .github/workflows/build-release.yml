@@ -41,7 +41,7 @@ jobs:
       - name: Install Poetry
         run: |
           pip install poetry
-      - name: Setup dependencies
+      - name: Install Erlang Dependencies
         run: |
           sudo apt update
           sudo apt upgrade -y
@@ -52,6 +52,9 @@ jobs:
           sudo apt-get install -y ncurses-dev
           # Install OpenSSL and Development Headers
           sudo apt install -y openssl libssl-dev
+      - name: Install Poetry Dependencies
+        run: |
+          poetry install
       - name: Verify Dependencies
         run: |
           tar --version
@@ -137,6 +140,9 @@ jobs:
           pip install poetry
       - name: Install WSL dependencies
         run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
+      - name: Install Poetry Dependencies
+        run: |
+          poetry install
       - name: Install openssl
         shell: cmd
         run: |
