@@ -12,6 +12,11 @@ class UnsupportedOS(Exception):
   ...
 
 
+class CaseSensitiveConfigParser(configparser.ConfigParser):
+  def optionxform(self, optionstr: str) -> str:
+    return optionstr
+
+
 # Check execution environment
 IS_WINDOWS = "nt" in str(os.name).lower()
 IS_LINUX = "posix" in str(os.name).lower()
@@ -31,7 +36,7 @@ def set_erlang_env() -> None:
     # Update erl.ini
     erl_bin_dir = os.path.join(absolute_erts_dir, "bin")
     erl_ini = os.path.join(erl_bin_dir, "erl.ini")
-    config = configparser.ConfigParser()
+    config = CaseSensitiveConfigParser()
     config.read(erl_ini)
     config["erlang"]["Bindir"] = erl_bin_dir
     config["erlang"]["Rootdir"] = absolute_erts_dir
