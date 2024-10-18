@@ -132,10 +132,17 @@ jobs:
         with:
           distribution: Ubuntu-18.04
       - name: Install WSL dependencies
-        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip python3 python3-pip
+        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
+      - name: Install Python
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt install -y python3.11 python3.11-venv python3.11-dev
+          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+          python3 --version
       - name: Install Poetry
         run: |
-          pip3 install poetry
+          curl -sSL https://install.python-poetry.org | python3.11 -
+          poetry --version
       - name: Install Poetry Dependencies
         run: |
           poetry install
