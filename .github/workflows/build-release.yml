@@ -104,9 +104,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! git rev-parse "${{ env.RABBITMQ_VERSION }}" >/dev/null 2>&1; then
-            git tag "${{ env.RABBITMQ_VERSION }}"
-            git push origin "${{ env.RABBITMQ_VERSION }}"
+          if ! curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/matching-refs/tags/$RABBITMQ_VERSION" | grep -q "$RABBITMQ_VERSION"; then
+            git tag "$RABBITMQ_VERSION"
+            git push origin "$RABBITMQ_VERSION"
           fi
       - name: Upload Release
         uses: softprops/action-gh-release@v2
@@ -203,9 +203,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! git rev-parse "${{ env.RABBITMQ_VERSION }}" >/dev/null 2>&1; then
-            git tag "${{ env.RABBITMQ_VERSION }}"
-            git push origin "${{ env.RABBITMQ_VERSION }}"
+          if ! curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/matching-refs/tags/$RABBITMQ_VERSION" | grep -q "$RABBITMQ_VERSION"; then
+            git tag "$RABBITMQ_VERSION"
+            git push origin "$RABBITMQ_VERSION"
           fi
       - name: Upload Release
         uses: softprops/action-gh-release@v2
