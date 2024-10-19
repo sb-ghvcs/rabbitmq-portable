@@ -29,22 +29,26 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def set_erlang_env() -> None:
+  erts_dir_pattern = "erts-*"
   if IS_WINDOWS:
     erlang_dir = os.path.join(script_dir, "external/erlang")
-    absolute_erts_dir = os.path.abspath(erlang_dir)
-    os.environ["ERLANG_HOME"] = absolute_erts_dir
+    absolute_erlang_root_dir = os.path.abspath(erlang_dir)
+    os.environ["ERLANG_HOME"] = absolute_erlang_root_dir
     # Update erl.ini
-    erl_bin_dir = os.path.join(absolute_erts_dir, "bin")
+    erl_bin_dir = os.path.join(absolute_erlang_root_dir, "bin")
     erl_ini = os.path.join(erl_bin_dir, "erl.ini")
+    formed_erts_dir_pattern = os.path.join(absolute_erlang_root_dir, erts_dir_pattern)
+    erts_dir = glob.glob(formed_erts_dir_pattern)
+    if len(erts_dir) == 0:
+      raise ValueError(f"Could not find erts directory in {formed_erts_dir_pattern}")
+    absolute_erts_dir = os.path.join(os.path.abspath(erts_dir[0]), "bin")
     config = CaseSensitiveConfigParser()
     config.read(erl_ini)
-    config["erlang"]["Bindir"] = erl_bin_dir
-    config["erlang"]["Rootdir"] = absolute_erts_dir
+    config["erlang"]["Bindir"] = absolute_erts_dir.replace("\\", "\\\\")
+    config["erlang"]["Rootdir"] = absolute_erlang_root_dir.replace("\\", "\\\\")
     with open(erl_ini, "w", encoding="utf-8") as configfile:
       config.write(configfile)
-
   else:
-    erts_dir_pattern = "erts-*"
     formed_erts_dir_pattern = os.path.join(
       script_dir, "external/erlang/lib/erlang", erts_dir_pattern
     )
