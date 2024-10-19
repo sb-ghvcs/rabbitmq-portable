@@ -170,6 +170,10 @@ jobs:
           ./otp_build boot -a
           ./otp_build release -a
           cp -r bin release/win32/
+          cd release/win32/bin
+          rm -rf win32
+          rm -f no_dot_erlang.script start.script start_clean.script start_sasl.script
+          ln -s erl.exe werl.exe
       - name: Verify Erlang Build
         run: |
           cd $ERLANG_SOURCE_DIR
