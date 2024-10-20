@@ -34,6 +34,19 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 @no_type_check
 def check_vc_redist() -> bool:
+  """
+  Check if Microsoft Visual C++ Redist package is installed.
+
+  On Windows, check registry key HKEY_LOCAL_MACHINE/SOFTWARE/Microsoft/VisualStudio
+  and look for any version key (e.g. 14.0, 15.0, etc.) with a child key named "VC".
+  If such a key is found, print a message and return True. If no such key is found,
+  print a message and return False.
+
+  On non-Windows platforms, raise ValueError.
+
+  Returns:
+    bool: True if VC Redist is installed, False otherwise.
+  """
   if IS_WINDOWS:
     try:
       base_key_path = r"SOFTWARE\\Microsoft\\VisualStudio"
@@ -64,6 +77,16 @@ def check_vc_redist() -> bool:
 
 
 def install_vc_redist() -> None:
+  """
+  Install the bundled Microsoft Visual C++ Redist package.
+
+  This package is only installed on Windows if the vc_redist.exe installer is
+  present in the external/erlang directory, and the package is not already
+  installed.
+
+  The package is installed in quiet mode with no restart required. The
+  installation is verified by checking the return code of the subprocess.
+  """
   if IS_WINDOWS:
     print("Installing Bundled VC Redist...")
     erlang_dir = os.path.join(script_dir, "external/erlang")
@@ -73,7 +96,20 @@ def install_vc_redist() -> None:
     print("Installed Microsoft Visual C++ Redist")
 
 
-def set_erlang_env() -> None:
+def set_erlang_env() -> str:
+  """
+  Set Erlang environment variables and update erl.ini in the erts directory.
+
+  On Windows, the ERLANG_HOME environment variable is set to the absolute path of
+  the external/erlang directory. The erl.ini file is updated with absolute paths
+  to the bin directory and the root directory.
+
+  On Linux, the PATH environment variable is set to include the bin directory of
+  the erts directory. This allows the Erlang executables to be found without
+  setting ERLANG_HOME.
+
+  Returns the absolute path to the bin directory of the erts directory.
+  """
   erts_dir_pattern = "erts-*"
   if IS_WINDOWS:
     erlang_dir = os.path.join(script_dir, "external/erlang")
@@ -105,15 +141,18 @@ def set_erlang_env() -> None:
       raise ValueError(f"Could not find erts directory in {formed_erts_dir_pattern}")
     absolute_erts_bin_dir = os.path.join(os.path.abspath(erts_dir[0]), "bin")
     os.environ["PATH"] = absolute_erts_bin_dir + os.pathsep + os.environ["PATH"]
+  return absolute_erts_bin_dir
 
 
 def main() -> None:
   server_dir = os.path.join(script_dir, "external/rabbitmq_server/sbin")
-  set_erlang_env()
+  erts_bin_dir = set_erlang_env()
   if IS_WINDOWS:
     server_path = os.path.join(server_dir, "rabbitmq-server.bat")
+    epmd_path = os.path.join(erts_bin_dir, "epmd.exe")
   else:
     server_path = os.path.join(server_dir, "rabbitmq-server")
+    epmd_path = os.path.join(erts_bin_dir, "epmd")
 
   def signal_handler(_signum: int, _frame: Optional[FrameType]) -> None:
     print("SIGINT received. Shutting down RabbitMQ server")
@@ -125,9 +164,14 @@ def main() -> None:
   # Start rabbitmq server
   print("Starting RabbitMQ server...")
   rabbitmq_process = subprocess.Popen(
-    [server_path], stdout=sys.stdout, stderr=sys.stderr
+    [server_path, "--name=rabbit@localhost"],
+    stdout=sys.stdout,
+    stderr=sys.stderr,
+    shell=True,
   )
   rabbitmq_process.wait()
+  print("Stopping EPMD process...")
+  subprocess.run([epmd_path, "-kill"], check=True, shell=True)
   print("Goodbye!")
 
 
