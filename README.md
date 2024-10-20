@@ -12,7 +12,8 @@ Simply download the latest release from the releases section for your platform.
 
 ## How It Works
 
-We build Erlang from source, since erlang doesn't provide a portable zip. We build the linux release on ubuntu runners and windows release on windows runners.
+For Linux, we build erlang from source since there are no prebuilt binaries provided. Erlang only provided direct installations via package manager.
+For Windows, we download the 64bit release in Zip format and extract it to our internal directory.
 
 Then, we download rabbitmq's binaries (zip for windows, tar.xf for linux), unpack it, put it in a directory with erlang, and have a start script that takes care of setting any env variables needed for running it. We then package everything with PyInstaller into a single executable.
 

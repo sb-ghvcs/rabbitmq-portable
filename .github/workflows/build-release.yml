@@ -119,14 +119,9 @@ jobs:
     if: inputs.build_windows
     env:
       ERLANG_VERSION: ${{ github.event.inputs.erlang_version }}
-      ERLANG_TAR_URL: https://github.com/erlang/otp/releases/download/OTP-${{ github.event.inputs.erlang_version }}/otp_src_${{ github.event.inputs.erlang_version }}.tar.gz
-      ERLANG_SOURCE_DIR: otp_src_${{ github.event.inputs.erlang_version }}
+      ERLANG_ZIP_URL: https://github.com/erlang/otp/releases/download/OTP-${{ github.event.inputs.erlang_version }}/otp_win64_${{ github.event.inputs.erlang_version }}.zip
       RABBITMQ_VERSION: ${{ github.event.inputs.rabbitmq_version }}
       RABBITMQ_ZIP_URL: https://github.com/rabbitmq/rabbitmq-server/releases/download/v${{ github.event.inputs.rabbitmq_version }}/rabbitmq-server-windows-${{ github.event.inputs.rabbitmq_version }}.zip
-      WSLENV: ERLANG_VERSION:ERLANG_TAR_URL:ERLANG_SOURCE_DIR:RABBITMQ_VERSION:RABBITMQ_ZIP_URL
-    defaults:
-      run:
-        shell: wsl-bash {0}
     runs-on: windows-2022
     steps:
       - name: Checkout Repo
@@ -136,67 +131,25 @@ jobs:
         with:
           python-version: 3.11
       - name: Install Poetry
-        shell: pwsh
         run: |
           python -m pip install poetry
-      - uses: Vampire/setup-wsl@v3.1.1
-        with:
-          distribution: Ubuntu-18.04
-      - name: Install WSL dependencies
-        run: apt update && apt install -y g++-mingw-w64 gcc-mingw-w64 make autoconf unzip
-      - name: Install Poetry Dependencies
-        shell: pwsh
+      - name: Download Erlang's Pre-built binaries
         run: |
-          poetry install
-      - name: Install openssl
-        shell: cmd
-        run: |
-          choco install openssl --version=3.1.1
-          IF EXIST "c:\\Program Files\\OpenSSL-Win64" (move "c:\\Program Files\\OpenSSL-Win64" "c:\\OpenSSL-Win64") ELSE (move "c:\\Program Files\\OpenSSL" "c:\\OpenSSL-Win64")
-      - name: Download Erlang Source
-        run: |
-          curl -L -o otp.tar.gz $ERLANG_TAR_URL
-          tar -zxf otp.tar.gz
-          rm -f otp.tar.gz
-      - name: Compile Erlang
-        run: |
-          cd $ERLANG_SOURCE_DIR
-          export ERL_TOP=`pwd`
-          export MAKEFLAGS=-j$(($(nproc) + 2))
-          export ERLC_USE_SERVER=true
-          export ERTS_SKIP_DEPEND=true
-          eval `./otp_build env_win32 x64`
-          ./otp_build configure
-          ./otp_build boot -a
-          ./otp_build release -a
-          cp -r bin release/win32/
-          cd release/win32/bin
-          rm -rf win32
-          rm -f no_dot_erlang.script start.script start_clean.script start_sasl.script
-          ln -s erl.exe werl.exe
-      - name: Verify Erlang Build
-        run: |
-          cd $ERLANG_SOURCE_DIR
-          cd release
-          ls -lA
-          cd win32
-          ls -lA
+          Invoke-WebRequest -Uri $env:ERLANG_ZIP_URL -OutFile erlang.zip
+          Expand-Archive -Path erlang.zip -DestinationPath ./erlang
+          Remove-Item -Path erlang.zip
       - name: Download RabbitMQ Binaries
         run: |
-          curl -L -o rabbitmq.zip $RABBITMQ_ZIP_URL
-          unzip rabbitmq.zip
-          rm -f rabbitmq.zip
+          Invoke-WebRequest -Uri $env:RABBITMQ_ZIP_URL -OutFile rabbitmq.zip
+          Expand-Archive -Path rabbitmq.zip
+          Remove-Item -Path rabbitmq.zip
       - name: Move Binaries into External
         run: |
-          mkdir -p external/rabbitmq_server
-          mkdir -p external/erlang
-          mv $ERLANG_SOURCE_DIR/release/win32/* external/erlang
-          mv rabbitmq_server-$RABBITMQ_VERSION/* external/rabbitmq_server
-          cd external/erlang
-          rm -f Install.exe
-          rm -f Install.ini
+          New-Item -ItemType Directory -Path "external/rabbitmq_server" 
+          New-Item -ItemType Directory -Path "external/erlang" -Force
+          Move-Item -Path "erlang\*" -Destination "external\erlang" 
+          Move-Item -Path "rabbitmq_server-$env:RABBITMQ_VERSION\*" -Destination "external\rabbitmq_server"
       - name: Build and Package Release
-        shell: pwsh
         run: |
           poetry run pyinstaller rabbitmq.spec
           Move-Item -Path 'dist\rabbitmq' -Destination 'rabbitmq'
@@ -207,10 +160,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/matching-refs/tags/$RABBITMQ_VERSION" | grep -q "$RABBITMQ_VERSION"; then
-            git tag "$RABBITMQ_VERSION"
-            git push origin "$RABBITMQ_VERSION"
-          fi
+          $GITHUB_TOKEN = $env:GITHUB_TOKEN
+          $RABBITMQ_VERSION = $env:RABBITMQ_VERSION
+          $repository = "${{ github.repository }}"
+
+          $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$repository/git/matching-refs/tags/$RABBITMQ_VERSION" -Headers @{ Authorization = "token $GITHUB_TOKEN" } -Method Get
+
+          if (-not ($response | Select-String -Pattern $RABBITMQ_VERSION)) {
+              git tag "$RABBITMQ_VERSION"
+              git push origin "$RABBITMQ_VERSION"
+          }
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:

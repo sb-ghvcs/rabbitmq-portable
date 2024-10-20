@@ -25,7 +25,50 @@ if not (IS_WINDOWS or IS_LINUX):
     f"Unsupported OS: {os.name}. Currently only windows (nt) and linux (posix) are supported."
   )
 
+if IS_WINDOWS:
+  import winreg
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+def check_vc_redist() -> bool:
+  if IS_WINDOWS:
+    try:
+      base_key_path = r"SOFTWARE\\Microsoft\\VisualStudio"
+      base_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, base_key_path)
+
+      index = 0
+      while True:
+        try:
+          version_key_name = winreg.EnumKey(base_key, index)
+          version_key_path = f"{base_key_path}\\{version_key_name}\\VC"
+          try:
+            vc_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, version_key_path)
+            winreg.CloseKey(vc_key)
+            print(f"Found VC Redist under version: {version_key_name}")
+            break
+          except FileNotFoundError:
+            pass
+          index += 1
+        except OSError:
+          break
+      winreg.CloseKey(base_key)
+      return True
+    except FileNotFoundError:
+      print("VC Redist is not installed.")
+      return False
+  else:
+    raise ValueError("Don't check for vc redist in a non-windows environment")
+
+
+def install_vc_redist() -> None:
+  if IS_WINDOWS:
+    print("Installing Bundled VC Redist...")
+    erlang_dir = os.path.join(script_dir, "external/erlang")
+    vc_redist_installer = os.path.join(erlang_dir, "vc_redist.exe")
+    install_command = f'"{vc_redist_installer}" /install /quiet /norestart'
+    subprocess.run(["powershell", "-Command", install_command], check=True)
+    print("Installed Microsoft Visual C++ Redist")
 
 
 def set_erlang_env() -> None:
@@ -33,21 +76,9 @@ def set_erlang_env() -> None:
   if IS_WINDOWS:
     erlang_dir = os.path.join(script_dir, "external/erlang")
     absolute_erlang_root_dir = os.path.abspath(erlang_dir)
+    if not check_vc_redist():
+      install_vc_redist()
     os.environ["ERLANG_HOME"] = absolute_erlang_root_dir
-    # Update erl.ini
-    erl_bin_dir = os.path.join(absolute_erlang_root_dir, "bin")
-    erl_ini = os.path.join(erl_bin_dir, "erl.ini")
-    formed_erts_dir_pattern = os.path.join(absolute_erlang_root_dir, erts_dir_pattern)
-    erts_dir = glob.glob(formed_erts_dir_pattern)
-    if len(erts_dir) == 0:
-      raise ValueError(f"Could not find erts directory in {formed_erts_dir_pattern}")
-    absolute_erts_dir = os.path.join(os.path.abspath(erts_dir[0]), "bin")
-    config = CaseSensitiveConfigParser()
-    config.read(erl_ini)
-    config["erlang"]["Bindir"] = absolute_erts_dir.replace("\\", "\\\\")
-    config["erlang"]["Rootdir"] = absolute_erlang_root_dir.replace("\\", "\\\\")
-    with open(erl_ini, "w", encoding="utf-8") as configfile:
-      config.write(configfile)
   else:
     formed_erts_dir_pattern = os.path.join(
       script_dir, "external/erlang/lib/erlang", erts_dir_pattern
