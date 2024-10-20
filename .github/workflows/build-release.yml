@@ -141,13 +141,13 @@ jobs:
       - name: Download RabbitMQ Binaries
         run: |
           Invoke-WebRequest -Uri $env:RABBITMQ_ZIP_URL -OutFile rabbitmq.zip
-          Expand-Archive -Path rabbitmq.zip
+          Expand-Archive -Path rabbitmq.zip -DestinationPath .
           Remove-Item -Path rabbitmq.zip
       - name: Move Binaries into External
         run: |
           New-Item -ItemType Directory -Path "external/rabbitmq_server" 
           New-Item -ItemType Directory -Path "external/erlang" -Force
-          Move-Item -Path "erlang\*" -Destination "external\erlang" 
+          Move-Item -Path "erlang\*" -Destination "external\erlang"
           Move-Item -Path "rabbitmq_server-$env:RABBITMQ_VERSION\*" -Destination "external\rabbitmq_server"
       - name: Build and Package Release
         run: |
