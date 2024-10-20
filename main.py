@@ -1,4 +1,3 @@
-import configparser
 import os
 import glob
 import sys
@@ -10,11 +9,6 @@ from typing import Optional
 
 class UnsupportedOS(Exception):
   ...
-
-
-class CaseSensitiveConfigParser(configparser.ConfigParser):
-  def optionxform(self, optionstr: str) -> str:
-    return optionstr
 
 
 # Check execution environment
@@ -79,6 +73,7 @@ def set_erlang_env() -> None:
     if not check_vc_redist():
       install_vc_redist()
     os.environ["ERLANG_HOME"] = absolute_erlang_root_dir
+    print(f"Set ERLANG_HOME environment variable to {absolute_erlang_root_dir}")
   else:
     formed_erts_dir_pattern = os.path.join(
       script_dir, "external/erlang/lib/erlang", erts_dir_pattern
@@ -106,11 +101,12 @@ def main() -> None:
   signal.signal(signal.SIGINT, signal_handler)
 
   # Start rabbitmq server
+  print("Starting RabbitMQ server...")
   rabbitmq_process = subprocess.Popen(
     [server_path], stdout=sys.stdout, stderr=sys.stderr
   )
   rabbitmq_process.wait()
-  print("RabbitMQ server shutdown. Goodbye!")
+  print("Goodbye!")
 
 
 if __name__ == "__main__":

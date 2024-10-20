@@ -133,6 +133,9 @@ jobs:
       - name: Install Poetry
         run: |
           python -m pip install poetry
+      - name: Install Dependencies
+        run: |
+          poetry install
       - name: Download Erlang's Pre-built binaries
         run: |
           Invoke-WebRequest -Uri $env:ERLANG_ZIP_URL -OutFile erlang.zip
