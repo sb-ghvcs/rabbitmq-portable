@@ -111,6 +111,7 @@ jobs:
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           tag_name: ${{ env.RABBITMQ_VERSION }}
           files: |
             rabbitmq-linux.tar.gz
@@ -176,6 +177,7 @@ jobs:
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           tag_name: ${{ env.RABBITMQ_VERSION }}
           files: |
             rabbitmq-windows.zip
